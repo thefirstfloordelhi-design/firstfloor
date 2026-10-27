@@ -3,14 +3,37 @@ import { useState } from 'react';
 
 export default function CTA() {
   const [reservationSent, setReservationSent] = useState(false);
+  const [phoneError, setPhoneError] = useState('');
+
+  /** Allow only digits and '+' in the phone field */
+  function handlePhoneChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const value = e.target.value;
+    // Strip any character that isn't a digit or '+'
+    const sanitized = value.replace(/[^0-9+]/g, '');
+    e.target.value = sanitized;
+
+    if (sanitized.length > 0 && !/^\+?\d+$/.test(sanitized)) {
+      setPhoneError('Only numbers and "+" are allowed');
+    } else {
+      setPhoneError('');
+    }
+  }
 
   function submitReservation(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
+
+    // Final phone validation before submit
+    const phone = (data.get('phone') as string) || '';
+    if (!/^\+?\d+$/.test(phone)) {
+      setPhoneError('Please enter a valid phone number (digits and "+" only)');
+      return;
+    }
+
     const message = [
       'Hello Palm, I would like to make a reservation.',
       `Name: ${data.get('name')}`,
-      `Phone: ${data.get('phone')}`,
+      `Phone: ${phone}`,
       data.get('email') ? `Email: ${data.get('email')}` : '',
       `Guests: ${data.get('guests')}`,
       `Date: ${data.get('date')}`,
@@ -61,26 +84,17 @@ export default function CTA() {
               {/* Guests */}
               <div>
                 <label htmlFor="guestCount" className="block text-[13px] font-medium text-[#77716A] mb-2">
-                  Guests
+                  Number of Guests
                 </label>
-                <div className="relative">
-                  <select
-                    id="guestCount"
-                    name="guests"
-                    defaultValue="1 Person"
-                    className="w-full h-[38px] bg-[#F6F5F2] hover:bg-[#F0EEE9] focus:bg-white border border-transparent focus:border-[#D5CEC5] text-[#171513] text-[14px] px-4 pr-10 outline-none appearance-none cursor-pointer transition-all"
-                  >
-                    <option value="1 Person">1 Person</option>
-                    <option value="2 People">2 People</option>
-                    <option value="3 People">3 People</option>
-                    <option value="4 People">4 People</option>
-                    <option value="5 People">5 People</option>
-                    <option value="6+ People">6+ People</option>
-                  </select>
-                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#77716A] text-[11px]">
-                    ▼
-                  </span>
-                </div>
+                <input
+                  id="guestCount"
+                  name="guests"
+                  type="number"
+                  min="1"
+                  required
+                  placeholder="e.g. 4"
+                  className="w-full h-[38px] bg-[#F6F5F2] hover:bg-[#F0EEE9] focus:bg-white border border-transparent focus:border-[#D5CEC5] text-[#171513] text-[14px] px-4 outline-none transition-all placeholder:text-[#A09A93]"
+                />
               </div>
 
               {/* Date */}
@@ -103,27 +117,13 @@ export default function CTA() {
                 <label htmlFor="guestTime" className="block text-[13px] font-medium text-[#77716A] mb-2">
                   Time
                 </label>
-                <div className="relative">
-                  <select
-                    id="guestTime"
-                    name="time"
-                    defaultValue="11.00 AM"
-                    className="w-full h-[38px] bg-[#F6F5F2] hover:bg-[#F0EEE9] focus:bg-white border border-transparent focus:border-[#D5CEC5] text-[#171513] text-[14px] px-4 pr-10 outline-none appearance-none cursor-pointer transition-all"
-                  >
-                    <option value="11.00 AM">11.00 AM</option>
-                    <option value="12.00 PM">12.00 PM</option>
-                    <option value="01.00 PM">01.00 PM</option>
-                    <option value="02.00 PM">02.00 PM</option>
-                    <option value="03.00 PM">03.00 PM</option>
-                    <option value="07.00 PM">07.00 PM</option>
-                    <option value="08.00 PM">08.00 PM</option>
-                    <option value="09.00 PM">09.00 PM</option>
-                    <option value="10.00 PM">10.00 PM</option>
-                  </select>
-                  <span className="pointer-events-none absolute right-4 top-1/2 -translate-y-1/2 text-[#77716A] text-[11px]">
-                    ▼
-                  </span>
-                </div>
+                <input
+                  id="guestTime"
+                  name="time"
+                  type="time"
+                  required
+                  className="w-full h-[38px] bg-[#F6F5F2] hover:bg-[#F0EEE9] focus:bg-white border border-transparent focus:border-[#D5CEC5] text-[#171513] text-[14px] px-4 outline-none transition-all placeholder:text-[#A09A93]"
+                />
               </div>
 
               {/* Full Name */}
@@ -165,9 +165,15 @@ export default function CTA() {
                   name="phone"
                   type="tel"
                   required
-                  placeholder="Phone Number"
-                  className="w-full h-[38px] bg-[#F6F5F2] hover:bg-[#F0EEE9] focus:bg-white border border-transparent focus:border-[#D5CEC5] text-[#171513] text-[14px] px-4 outline-none transition-all placeholder:text-[#A09A93]"
+                  placeholder="e.g. +919599280444"
+                  pattern="^\+?\d+$"
+                  title="Only numbers and an optional leading + are allowed"
+                  onChange={handlePhoneChange}
+                  className={`w-full h-[38px] bg-[#F6F5F2] hover:bg-[#F0EEE9] focus:bg-white border ${phoneError ? 'border-red-400' : 'border-transparent'} focus:border-[#D5CEC5] text-[#171513] text-[14px] px-4 outline-none transition-all placeholder:text-[#A09A93]`}
                 />
+                {phoneError && (
+                  <p className="mt-1 text-[12px] text-red-500">{phoneError}</p>
+                )}
               </div>
             </div>
 
